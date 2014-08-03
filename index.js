@@ -1,39 +1,53 @@
 var cache = {};
-var default_expires = 5000;
 
-var get = function(key) {
+var get_key = function(fn, args) {
+   return fn.toString() + '__' + args.map(function(el) { return el.toString() }).join('__');
+}
+
+var get = function(fn, args) {
+  var key = get_key(fn, args);
 
   if (cache[key]) {
-    if (cache[key].valid_until == 0 || cache[key].valid_until > Date.now())
-      return cache[key].value;
+
+    if (!cache[key].valid_until || cache[key].valid_until > Date.now())
+      return cache[key].result;
     else
       delete cache[key];
   }
-
 };
 
-var set = function(key, val, expires_in) {
-  if (!val) throw('No value passed');
+var set = function(fn, args, result, expires_in) {
+  if (typeof result !== 'object') 
+    throw('Result should be an object.');
+
+  var key = get_key(fn, args);
 
   cache[key] = {};
-  cache[key].value = val;
-  cache[key].valid_until = (Date.now() + (expires_in || default_expires));
+  cache[key].result = result;
+
+  if (expires_in)
+    cache[key].valid_until = (Date.now() + expires_in);
 }
 
 module.exports = function(fn, expires_in) {
 
-  var memorized = function(cb){
-    var res = get(fn);
+  var memorized = function() {
+    var args = [].slice.call(arguments); // .sort();
+    var cb = args.pop();
+
+    var res = get(fn, args);
     if (res) {
+      // console.log('Found cached result.')
       return cb.apply(null, res);
     }
 
-    fn(function() {
-      if (!(arguments[0] instanceof Error)) {
-        set(fn, arguments, expires_in);
+    fn(args, function() {
+      var result = arguments;
+      if (!(result[0] instanceof Error)) {
+        set(fn, args, result, expires_in);
       }
 
-      cb.apply(null, arguments);
+      cb.apply(null, result);
     });
   }
 
