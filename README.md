@@ -44,7 +44,7 @@ You can also set an expiration time on memoization.
       }, 10000);
     })
 
-That's it.
+That's it. For more info take a look at the examples.
 
 About
 -----
