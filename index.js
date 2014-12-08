@@ -1,18 +1,19 @@
 var cache = {};
 
-var get_key = function(fn, args) {
-   return fn.toString() + '__' + args.map(function(el) { return el.toString() }).join('__');
+var get_key = function(args) {
+   return args.map(function(el) { return el.toString() }).join('__');
 }
 
 var get = function(fn, args) {
-  var key = get_key(fn, args);
+  var key    = fn.toString(),
+      subkey = get_key(args);
 
-  if (cache[key]) {
+  if (cache[key] && cache[key][subkey]) {
 
-    if (!cache[key].valid_until || cache[key].valid_until > Date.now())
-      return cache[key].result;
+    if (!cache[key][subkey].valid_until || cache[key][subkey].valid_until > Date.now())
+      return cache[key][subkey].result;
     else
-      delete cache[key];
+      delete cache[key][subkey];
   }
 };
 
@@ -20,13 +21,24 @@ var set = function(fn, args, result, expires_in) {
   if (typeof result !== 'object') 
     throw('Result should be an object.');
 
-  var key = get_key(fn, args);
+  var key    = fn.toString(),
+      subkey = get_key(args);
 
   cache[key] = {};
-  cache[key].result = result;
+
+  if (!cache[key])
+    cache[key] = {};
+
+  cache[key][subkey] = {};
+  cache[key][subkey].result = result;
 
   if (expires_in)
-    cache[key].valid_until = (Date.now() + expires_in);
+    cache[key][subkey].valid_until = (Date.now() + expires_in);
+}
+
+var reset = function(fn) {
+  var key = fn.toString();
+  delete cache[key];
 }
 
 module.exports = function(fn, expires_in) {
@@ -41,14 +53,20 @@ module.exports = function(fn, expires_in) {
       return cb.apply(null, res);
     }
 
-    fn(args, function() {
+    var handler = function() {
       var result = arguments;
       if (!(result[0] instanceof Error)) {
         set(fn, args, result, expires_in);
       }
 
       cb.apply(null, result);
-    });
+    }
+
+    fn.apply(null, args.concat(handler));
+  }
+
+  memorized.reset = function() {
+    reset(fn);
   }
 
   return memorized;
