@@ -3,6 +3,8 @@ Memorize
 
 Like async's memoize. But without the rest.
 
+    $ npm install memorize
+
 Example
 -------
 
