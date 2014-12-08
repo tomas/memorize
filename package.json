@@ -4,7 +4,7 @@
   "description": "Async function memorization, except on errors.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test"
   },
   "author": "Tomas Pollak <tomas@forkhq.com>",
   "license": "MIT",
