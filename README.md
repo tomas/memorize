@@ -29,8 +29,7 @@ Example
 You can also set an expiration time on memoization.
 
     var foo = memo(function(cb) { 
-      // magic happens here, but it takes long
-      cb('Hello there')
+      // ... (long running method that takes a few seconds)
     }, 7000); // expire after 7 secs.
    
     foo(function(res) {
